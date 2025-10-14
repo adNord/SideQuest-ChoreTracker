@@ -63,7 +63,6 @@ public class UserService {
                 authManager.authenticate(new UsernamePasswordAuthenticationToken(
             loginRequest.username(), loginRequest.password()));
 
-        /* ** For JWT ** */
         if (authentication.isAuthenticated()) {
             User user = userRepository.findByUsername(loginRequest.username());
             String jwt = jwtService.generateToken(user);
