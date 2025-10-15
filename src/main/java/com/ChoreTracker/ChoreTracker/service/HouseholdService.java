@@ -25,8 +25,9 @@ public class HouseholdService {
         this.inviteCodeService = inviteCodeService;
     }
 
+
+    /* -- Skapa nytt hushåll -- */
     public ResponseEntity<Object> createHousehold(CreateHouseholdRequest request, String userID) {
-        
         //Kolla om användaren är valid och inte med i ett hushåll redan
         Optional<User> userOptional = userRepository.findById(userID);
         if (userOptional.isEmpty()) {
@@ -60,4 +61,36 @@ public class HouseholdService {
 
         return ResponseEntity.status(HttpStatus.CREATED).body(saved);
     }
+
+    /* -- Gå med i hushåll -- */
+    public ResponseEntity<Object> joinHousehold(String inviteCode, String userID) {
+        System.out.println("Joining household with invite code " + inviteCode + " for user " + userID);
+        //Kolla om användaren är valid och inte med i ett hushåll redan
+        Optional<User> userOptional = userRepository.findById(userID);
+        if (userOptional.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User with ID " + userID + " not found");
+        } else if (userOptional.get().getHouseholdId() != null) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("User with ID " + userID + " already in a household");
+        }
+        System.out.println("User is valid and not in a household");
+
+        //Hitta hushållet med inbjudningskoden
+        Optional<Household> householdOptional = householdRepository.findByInviteCode(inviteCode);
+        if (householdOptional.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("No household found with invite code " + inviteCode);
+        }
+        Household household = householdOptional.get();
+        //Lägg till användaren som medlem med startpoäng 0
+        List<Household.MemberScore> members = household.getMembers();
+        members.add(new Household.MemberScore(userID, 0));
+        household.setMembers(members);
+        householdRepository.save(household);
+
+        User user = userOptional.get();
+        user.setHouseholdId(household.getId());
+        userRepository.save(user);
+
+        return ResponseEntity.status(HttpStatus.OK).body("Joining household with invite code " + inviteCode + " for user " + userID);
+    }
+
 }

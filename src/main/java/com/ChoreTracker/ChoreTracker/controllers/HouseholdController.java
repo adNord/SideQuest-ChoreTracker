@@ -4,6 +4,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.ChoreTracker.ChoreTracker.dtos.CreateHouseholdRequest;
+import com.ChoreTracker.ChoreTracker.dtos.JoinHouseholdRequest;
 import com.ChoreTracker.ChoreTracker.models.UserPrincipal;
 import com.ChoreTracker.ChoreTracker.service.HouseholdService;
 
@@ -33,23 +34,23 @@ public class HouseholdController {
         return householdService.createHousehold(householdRequest, userID);
     }
 
-    @PostMapping("/join/")
-    public ResponseEntity<Object> postJoinHousehold(@RequestBody String code) {
+    @PostMapping("/join")
+    public ResponseEntity<Object> postJoinHousehold(@RequestBody JoinHouseholdRequest joinRequest, Authentication authentication) {
+        String userID = getUserId(authentication);
+
+        return householdService.joinHousehold(joinRequest.inviteCode(), userID);
+    }
+    
+    @PostMapping("/leave")
+    public ResponseEntity<Object> postLeaveHousehold(@PathVariable String id, @RequestBody String entity) {
         //TODO: process POST request
 
-        return ResponseEntity.ok(code);
+        return ResponseEntity.ok(entity);
     }
 
     @GetMapping("/{id}")
     public ResponseEntity<Object> getHousehold(@PathVariable String id, @RequestBody String entity) {
         //TODO: process GET request
-
-        return ResponseEntity.ok(entity);
-    }
-    
-    @PostMapping("/leave/{id}")
-    public ResponseEntity<Object> postLeaveHousehold(@PathVariable String id, @RequestBody String entity) {
-        //TODO: process POST request
 
         return ResponseEntity.ok(entity);
     }
