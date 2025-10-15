@@ -1,5 +1,6 @@
 package com.ChoreTracker.ChoreTracker.service;
 
+import java.util.List;
 import java.util.Optional;
 
 import org.springframework.http.HttpStatus;
@@ -16,10 +17,12 @@ import com.ChoreTracker.ChoreTracker.repositories.UserRepository;
 public class HouseholdService {
     private final HouseholdRepository householdRepository;
     private final UserRepository userRepository;
+    private final InviteCodeService inviteCodeService;
 
-    public HouseholdService(HouseholdRepository householdRepository, UserRepository userRepository) {
+    public HouseholdService(HouseholdRepository householdRepository, UserRepository userRepository, InviteCodeService inviteCodeService) {
         this.householdRepository = householdRepository;
         this.userRepository = userRepository;
+        this.inviteCodeService = inviteCodeService;
     }
 
     public ResponseEntity<Object> createHousehold(CreateHouseholdRequest request, String userID) {
@@ -39,9 +42,14 @@ public class HouseholdService {
 
         //Lägg till skaparen som medlem med startpoäng 0
         Household.MemberScore creator = new Household.MemberScore(userID, 0);
-        java.util.List<Household.MemberScore> members = new java.util.ArrayList<>();
+        List<Household.MemberScore> members = new java.util.ArrayList<>();
         members.add(creator);
         newHousehold.setMembers(members);
+
+        //Generera unik invite-kod
+        String inviteCode = inviteCodeService.generateInviteCode();
+        newHousehold.setInviteCode(inviteCode);
+        newHousehold.setPremium(false); //Standard är icke-premium
 
         Household saved = householdRepository.save(newHousehold);
 
