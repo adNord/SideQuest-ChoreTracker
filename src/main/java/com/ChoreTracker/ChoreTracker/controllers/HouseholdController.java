@@ -3,9 +3,9 @@ package com.ChoreTracker.ChoreTracker.controllers;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.ChoreTracker.ChoreTracker.dtos.CreateHouseholdRequest;
-import com.ChoreTracker.ChoreTracker.dtos.JoinHouseholdRequest;
-import com.ChoreTracker.ChoreTracker.dtos.LeaveHouseholdRequest;
+import com.ChoreTracker.ChoreTracker.dtos.household.CreateHouseholdRequest;
+import com.ChoreTracker.ChoreTracker.dtos.household.JoinHouseholdRequest;
+import com.ChoreTracker.ChoreTracker.dtos.household.LeaveHouseholdRequest;
 import com.ChoreTracker.ChoreTracker.models.UserPrincipal;
 import com.ChoreTracker.ChoreTracker.service.HouseholdService;
 
@@ -14,7 +14,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 
 
 
@@ -49,11 +48,11 @@ public class HouseholdController {
         return householdService.leaveHousehold(leaveRequest.householdId(), userID);
     }
 
-    @GetMapping("/{id}")
-    public ResponseEntity<Object> getHousehold(@PathVariable String id, @RequestBody String entity) {
-        //TODO: process GET request
+    @GetMapping
+    public ResponseEntity<Object> getHousehold(Authentication authentication) {
+        String userID = getUserId(authentication);
 
-        return ResponseEntity.ok(entity);
+        return householdService.getHousehold(userID);
     }
 
     private String getUserId(Authentication authentication) {

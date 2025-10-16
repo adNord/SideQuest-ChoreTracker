@@ -7,7 +7,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
-import com.ChoreTracker.ChoreTracker.dtos.CreateHouseholdRequest;
+import com.ChoreTracker.ChoreTracker.dtos.household.CreateHouseholdRequest;
 import com.ChoreTracker.ChoreTracker.models.Household;
 import com.ChoreTracker.ChoreTracker.models.User;
 import com.ChoreTracker.ChoreTracker.repositories.HouseholdRepository;
@@ -114,6 +114,26 @@ public class HouseholdService {
         userRepository.save(user);
 
         return ResponseEntity.status(HttpStatus.OK).body("User with ID " + userID + " has left household " + householdId);
+    }
+
+    /* -- Hämta hushåll -- */
+    public ResponseEntity<Object> getHousehold(String userID) {
+        // Kolla om användaren är valid och med i ett hushåll
+        Optional<User> userOptional = userRepository.findById(userID);
+        if (userOptional.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User with ID " + userID + " not found");
+        } else if (userOptional.get().getHouseholdId() == null) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("User with ID " + userID + " is not in a household");
+            
+        }
+
+        // Hämta hushållet
+        Household household = householdRepository.findById(userOptional.get().getHouseholdId()).orElse(null);
+        if (household == null) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Household not found");
+        }
+
+        return ResponseEntity.ok(household);
     }
 
 }
