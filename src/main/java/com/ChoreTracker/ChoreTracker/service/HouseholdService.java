@@ -64,7 +64,6 @@ public class HouseholdService {
 
     /* -- Gå med i hushåll -- */
     public ResponseEntity<Object> joinHousehold(String inviteCode, String userID) {
-        System.out.println("Joining household with invite code " + inviteCode + " for user " + userID);
         //Kolla om användaren är valid och inte med i ett hushåll redan
         Optional<User> userOptional = userRepository.findById(userID);
         if (userOptional.isEmpty()) {
@@ -72,7 +71,6 @@ public class HouseholdService {
         } else if (userOptional.get().getHouseholdId() != null) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("User with ID " + userID + " already in a household");
         }
-        System.out.println("User is valid and not in a household");
 
         //Hitta hushållet med inbjudningskoden
         Optional<Household> householdOptional = householdRepository.findByInviteCode(inviteCode);
@@ -91,6 +89,31 @@ public class HouseholdService {
         userRepository.save(user);
 
         return ResponseEntity.status(HttpStatus.OK).body("Joining household with invite code " + inviteCode + " for user " + userID);
+    }
+
+    /* -- Lämna hushåll -- */
+    public ResponseEntity<Object> leaveHousehold(String householdId, String userID) {
+        // Kolla om användaren är valid och med i ett hushåll
+        Optional<User> userOptional = userRepository.findById(userID);
+        if (userOptional.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User with ID " + userID + " not found");
+        } else if (!userOptional.get().getHouseholdId().equals(householdId)) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("User with ID " + userID + " is not in household " + householdId);
+        }
+
+        // Ta bort användaren från hushållet
+        Household household = householdRepository.findById(householdId).orElse(null);
+        if (household != null) {
+            household.getMembers().removeIf(member -> member.getMemberId().equals(userID));
+            householdRepository.save(household);
+        }
+
+        // Uppdatera användarens householdId och spara
+        User user = userOptional.get();
+        user.setHouseholdId(null);
+        userRepository.save(user);
+
+        return ResponseEntity.status(HttpStatus.OK).body("User with ID " + userID + " has left household " + householdId);
     }
 
 }

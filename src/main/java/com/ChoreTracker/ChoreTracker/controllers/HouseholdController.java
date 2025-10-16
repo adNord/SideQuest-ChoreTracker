@@ -5,6 +5,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.ChoreTracker.ChoreTracker.dtos.CreateHouseholdRequest;
 import com.ChoreTracker.ChoreTracker.dtos.JoinHouseholdRequest;
+import com.ChoreTracker.ChoreTracker.dtos.LeaveHouseholdRequest;
 import com.ChoreTracker.ChoreTracker.models.UserPrincipal;
 import com.ChoreTracker.ChoreTracker.service.HouseholdService;
 
@@ -42,10 +43,10 @@ public class HouseholdController {
     }
     
     @PostMapping("/leave")
-    public ResponseEntity<Object> postLeaveHousehold(@PathVariable String id, @RequestBody String entity) {
-        //TODO: process POST request
+    public ResponseEntity<Object> postLeaveHousehold(@RequestBody LeaveHouseholdRequest leaveRequest, Authentication authentication) {
+        String userID = getUserId(authentication);
 
-        return ResponseEntity.ok(entity);
+        return householdService.leaveHousehold(leaveRequest.householdId(), userID);
     }
 
     @GetMapping("/{id}")
