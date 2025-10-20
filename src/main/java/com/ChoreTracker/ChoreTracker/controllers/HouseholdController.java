@@ -29,30 +29,30 @@ public class HouseholdController {
 
     @PostMapping
     public ResponseEntity<Object> postNewHousehold(@RequestBody CreateHouseholdRequest householdRequest, Authentication authentication) {
-        String userID = getUserId(authentication);
+        String userId = getUserId(authentication);
 
-        return householdService.createHousehold(householdRequest, userID);
+        return householdService.createHousehold(householdRequest, userId);
     }
 
     @PostMapping("/join")
     public ResponseEntity<Object> postJoinHousehold(@RequestBody JoinHouseholdRequest joinRequest, Authentication authentication) {
-        String userID = getUserId(authentication);
+        String userId = getUserId(authentication);
 
-        return householdService.joinHousehold(joinRequest.inviteCode(), userID);
+        return householdService.joinHousehold(joinRequest.inviteCode(), userId);
     }
     
     @PostMapping("/leave")
     public ResponseEntity<Object> postLeaveHousehold(@RequestBody LeaveHouseholdRequest leaveRequest, Authentication authentication) {
-        String userID = getUserId(authentication);
+        String userId = getUserId(authentication);
 
-        return householdService.leaveHousehold(leaveRequest.householdId(), userID);
+        return householdService.leaveHousehold(leaveRequest.householdId(), userId);
     }
 
     @GetMapping
     public ResponseEntity<Object> getHousehold(Authentication authentication) {
-        String userID = getUserId(authentication);
+        String userId = getUserId(authentication);
 
-        return householdService.getHousehold(userID);
+        return householdService.getHousehold(userId);
     }
 
     private String getUserId(Authentication authentication) {
