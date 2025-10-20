@@ -105,7 +105,7 @@ public class TaskService {
         task.setDueDate(Instant.now().plusSeconds(frequencyDays * 24 * 60 * 60));
         taskRepository.save(task);
 
-        // TODO: lägg till i historik
+        // TODO: premium feature - lägg till i historik
 
         // uppdatera användarens poäng i hushållet
         Optional<Household> householdOptional = householdRepository.findById(task.getHouseholdId());
@@ -139,8 +139,53 @@ public class TaskService {
         return ResponseEntity.status(HttpStatus.OK).body(task);
     }
 
+    /* -- Hämta alla uppgifter för ett hushåll -- */
+    public ResponseEntity<Object> getAllTasksForUserHousehold(String userId) {
+        Optional<User> userOptional = userRepository.findById(userId);
+        if (userOptional.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User with ID " + userId + " not found");
+        }
 
+        String householdId = userOptional.get().getHouseholdId();
+        if (householdId == null) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("User with ID " + userId + " is not in a household");
+        }
+        ArrayList<Task> tasks = taskRepository.findByHouseholdId(householdId);
+        if (tasks.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                    .body("No tasks found for household with ID " + householdId);
+        }
+        return ResponseEntity.status(HttpStatus.OK).body(tasks);
+    }
+    
+    /* -- Ta bort uppgift -- */
+    public ResponseEntity<Object> deleteTask(String userId, String taskId) {
+        Optional<User> userOptional = userRepository.findById(userId);
+        if (userOptional.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User with ID " + userId + " not found");
+        }
 
+        String householdId = userOptional.get().getHouseholdId();
+        if (householdId == null) {
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("User with ID " + userId + " is not in a household");
+        }
+
+        Optional<Task> taskOptional = taskRepository.findById(taskId);
+        if (taskOptional.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Task with ID " + taskId + " not found");
+        }
+
+        Task task = taskOptional.get();
+        if (!Objects.equals(task.getHouseholdId(), householdId)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body("User with ID " + userId + " cannot delete this task. (Not in the same household)");
+        }
+        taskRepository.deleteById(taskId);
+        notifyHouseholdMembersExcept(task.getHouseholdId(), userId, Map.of("DELETED", task));
+        return ResponseEntity.status(HttpStatus.OK).body("Task with ID " + taskId + " deleted successfully");
+    }
     /*-------------------------------------------------------------------- */
 
     /* hjälpmetod för att skicka websocket till alla utom skaparen */
@@ -162,5 +207,7 @@ public class TaskService {
             }
         }
     }
+
+
 
 }
