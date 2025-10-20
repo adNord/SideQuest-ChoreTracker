@@ -1,7 +1,7 @@
 package com.ChoreTracker.ChoreTracker.dtos;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 
-public record CreateTaskRequest(String title, int score, int frequencyDays, LocalDateTime dueDate) {
+public record CreateTaskRequest(String title, int score, int frequencyDays, Instant dueDate) {
     
 }

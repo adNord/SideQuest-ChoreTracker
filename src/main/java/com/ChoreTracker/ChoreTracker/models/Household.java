@@ -50,6 +50,10 @@ public class Household {
         public void setScore(int score) {
             this.score = score;
         }
+
+        public void incrementScore(int increment) {
+            this.score += increment;
+        }
     }
 
     public String getId() {

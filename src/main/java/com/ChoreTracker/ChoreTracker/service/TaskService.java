@@ -1,8 +1,11 @@
 package com.ChoreTracker.ChoreTracker.service;
 
+import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Objects;
+import java.util.ArrayList;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -14,6 +17,7 @@ import com.ChoreTracker.ChoreTracker.models.Household;
 import com.ChoreTracker.ChoreTracker.models.Task;
 import com.ChoreTracker.ChoreTracker.models.User;
 import com.ChoreTracker.ChoreTracker.repositories.HouseholdRepository;
+import com.ChoreTracker.ChoreTracker.repositories.TaskRepository;
 import com.ChoreTracker.ChoreTracker.repositories.UserRepository;
 
 @Service
@@ -21,30 +25,34 @@ public class TaskService {
 
     private final HouseholdRepository householdRepository;
     private final UserRepository userRepository;
+    private final TaskRepository taskRepository;
 
     private final SimpMessagingTemplate messagingTemplate;
 
-    public TaskService(HouseholdRepository householdRepository, UserRepository userRepository, SimpMessagingTemplate messagingTemplate) {
+    public TaskService(HouseholdRepository householdRepository, UserRepository userRepository,
+            TaskRepository taskRepository, SimpMessagingTemplate messagingTemplate) {
         this.householdRepository = householdRepository;
         this.userRepository = userRepository;
+        this.taskRepository = taskRepository;
         this.messagingTemplate = messagingTemplate;
     }
 
     /* -- Skapa ny uppgift -- */
     public ResponseEntity<Object> createTask(CreateTaskRequest taskRequest, String userId) {
-        //Kolla om användaren finns
+        // Kolla om användaren finns
         Optional<User> userOptional = userRepository.findById(userId);
         if (userOptional.isEmpty()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User with ID " + userId + " not found");
         }
 
-        //Kolla om användaren är med i ett hushåll
+        // Kolla om användaren är med i ett hushåll
         String householdId = userOptional.get().getHouseholdId();
         if (householdId == null) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body("User with ID " + userId + " is not in a household");
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                    .body("User with ID " + userId + " is not in a household");
         }
 
-        //Kolla om hushållet finns
+        // Kolla om hushållet finns
         Optional<Household> householdOptional = householdRepository.findById(householdId);
         if (householdOptional.isEmpty()) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Household with ID " + householdId + " not found");
@@ -55,21 +63,104 @@ public class TaskService {
         newTask.setScore(taskRequest.score());
         newTask.setFrequencyDays(taskRequest.frequencyDays());
         newTask.setDueDate(taskRequest.dueDate());
+        newTask.setHouseholdId(householdId);
+        taskRepository.save(newTask);
 
-        // Skicka websocket-meddelande till alla i hushållet om den nya uppgiften FÖRUTOM skaparen
+        // Skicka websocket-meddelande till alla i hushållet om den nya uppgiften
+        // Förutom skaparen
+        Map<String, Object> content = new HashMap<>();
+        content.put("CREATED", newTask);
+        notifyHouseholdMembersExcept(householdId, userId, content);
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(newTask);
+    }
+
+    /* -- Slutför uppgift -- */
+    public ResponseEntity<Object> completeTask(String userId, String taskId) {
+        // kolla så att användaren har rätt att slutföra uppgiften (finns och med i
+        // hushåll)
+        Optional<User> userOptional = userRepository.findById(userId);
+        Optional<Task> taskOptional = taskRepository.findById(taskId);
+        if (userOptional.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User with ID " + userId + " not found");
+        }
+
+        if (taskOptional.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Task with ID " + taskId + " not found");
+        }
+
+        Task task = taskOptional.get();
+
+        String userHouseholdId = userOptional.get().getHouseholdId();
+        String taskHouseholdId = task.getHouseholdId();
+
+        if (!Objects.equals(userHouseholdId, taskHouseholdId)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body("User with ID " + userId + " cannot complete this task. (Not in the same household)");
+        }
+
+        // uppdatera dueDate till nu + frequencyDays
+        int frequencyDays = task.getFrequencyDays();
+
+        task.setDueDate(Instant.now().plusSeconds(frequencyDays * 24 * 60 * 60));
+        taskRepository.save(task);
+
+        // TODO: lägg till i historik
+
+        // uppdatera användarens poäng i hushållet
+        Optional<Household> householdOptional = householdRepository.findById(task.getHouseholdId());
+        if (!householdOptional.isEmpty()) {
+            Household household = householdOptional.get();
+            User user = userOptional.get();
+
+            if (household.getMembers() == null) {
+                household.setMembers(new ArrayList<>());
+            }
+
+            for (Household.MemberScore member : household.getMembers()) {
+                String memberId = member.getMemberId();
+                if (memberId != null && memberId.equals(user.getId())) {
+                    member.incrementScore(task.getScore());
+                    break;
+                }
+            }
+
+            householdRepository.save(household);
+        }
+
+        // skicka websocket-meddelande till alla utom den som uppdaterade uppgiften i
+        // hushållet om den uppdaterade uppgiften (COMPLETED + newDueDate)
+
+        Map<String, Object> content = new HashMap<>();
+        content.put("COMPLETED", task);
+        notifyHouseholdMembersExcept(task.getHouseholdId(), userId, content);
+
+        // returnera responseentity med uppdaterad uppgift
+        return ResponseEntity.status(HttpStatus.OK).body(task);
+    }
+
+
+
+    /*-------------------------------------------------------------------- */
+
+    /* hjälpmetod för att skicka websocket till alla utom skaparen */
+    private void notifyHouseholdMembersExcept(String householdId, String excludingUserId, Map<String, Object> content) {
+        Optional<Household> householdOptional = householdRepository.findById(householdId);
+        if (householdOptional.isEmpty()) {
+            return;
+        }
+
         Household household = householdOptional.get();
         if (household.getMembers() != null) {
             for (Household.MemberScore member : household.getMembers()) {
                 String memberId = member.getMemberId();
-                if(memberId != null && !memberId.equals(userId)) continue;
+                // skippa null member ids och den som ska undantas
+                if (memberId == null || memberId.equals(excludingUserId))
+                    continue;
 
-                Map<String, Object> content = new HashMap<>();
-                content.put("CREATED", newTask);
                 messagingTemplate.convertAndSendToUser(memberId, "queue/household/" + householdId + "/tasks", content);
             }
         }
-
-        return ResponseEntity.status(HttpStatus.CREATED).body(newTask);
     }
-    
+
 }

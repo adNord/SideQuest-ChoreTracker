@@ -9,7 +9,10 @@ import com.ChoreTracker.ChoreTracker.service.TaskService;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 
 
 @RestController
@@ -22,10 +25,15 @@ public class TaskController {
     }
 
     @PostMapping
-    public ResponseEntity<Object> postNewTask(CreateTaskRequest taskRequest, Authentication authentication) {
+    public ResponseEntity<Object> postNewTask(@RequestBody CreateTaskRequest taskRequest, Authentication authentication) {
         String userId = getUserId(authentication);
-        
         return taskService.createTask(taskRequest, userId);
+    }
+
+    @PatchMapping("/{taskId}")
+    public ResponseEntity<Object> completeTask(@PathVariable String taskId, Authentication authentication) {
+        String userId = getUserId(authentication);
+        return taskService.completeTask(userId, taskId);
     }
 
     private String getUserId(Authentication authentication) {

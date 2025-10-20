@@ -1,6 +1,6 @@
 package com.ChoreTracker.ChoreTracker.models;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 
 import org.springframework.data.annotation.Id;
 import org.springframework.data.mongodb.core.mapping.Document;
@@ -13,9 +13,9 @@ public class Task {
     private String title;
     private int score;
     private int frequencyDays;
-    private LocalDateTime dueDate;
+    private Instant dueDate;
 
-    public Task(String householdId, String title, int score, int frequencyDays, LocalDateTime dueDate) {
+    public Task(String householdId, String title, int score, int frequencyDays, Instant dueDate) {
         this.householdId = householdId;
         this.title = title;
         this.score = score;
@@ -55,10 +55,10 @@ public class Task {
     public void setFrequencyDays(int frequencyDays) {
         this.frequencyDays = frequencyDays;
     }
-    public LocalDateTime getDueDate() {
+    public Instant getDueDate() {
         return dueDate;
     }
-    public void setDueDate(LocalDateTime dueDate) {
+    public void setDueDate(Instant dueDate) {
         this.dueDate = dueDate;
     }
 
