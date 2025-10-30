@@ -2,6 +2,7 @@ package com.ChoreTracker.ChoreTracker.service;
 
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -70,5 +71,17 @@ public class UserService {
         } else {
             throw new BadCredentialsException("Invalid credentials");
         }
+    }
+
+    public ResponseEntity<Object> getCurrentUser(String userId) {
+        Optional<User> userOptional = userRepository.findById(userId);
+        if (userOptional.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User with ID " + userId + " not found");
+        }
+        Map<String, Object> user = new HashMap<>();
+        user.put("id", userOptional.get().getId());
+        user.put("username", userOptional.get().getUsername());
+        user.put("householdId", userOptional.get().getHouseholdId());
+        return ResponseEntity.ok(user);
     }
 }

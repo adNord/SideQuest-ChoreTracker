@@ -195,15 +195,27 @@ public class TaskService {
             return;
         }
 
+        Optional<User> excludingUserOptional = userRepository.findById(excludingUserId);
+        if (excludingUserOptional.isPresent()) {
+            content.put("triggeredBy", excludingUserOptional.get().getUsername());
+        }
+
         Household household = householdOptional.get();
         if (household.getMembers() != null) {
             for (Household.MemberScore member : household.getMembers()) {
                 String memberId = member.getMemberId();
                 // skippa null member ids och den som ska undantas
                 if (memberId == null || memberId.equals(excludingUserId))
+                continue;
+               
+                Optional<User> memberUserOptional = userRepository.findById(memberId);
+                if (memberUserOptional.isEmpty()) {
                     continue;
+                }
 
-                messagingTemplate.convertAndSendToUser(memberId, "queue/household/" + householdId + "/tasks", content);
+                String memberUsername = memberUserOptional.get().getUsername();
+                System.out.println("Notifying member : " + memberUsername);
+                messagingTemplate.convertAndSendToUser(memberUsername, "queue/household/" + householdId + "/tasks", content);
             }
         }
     }
