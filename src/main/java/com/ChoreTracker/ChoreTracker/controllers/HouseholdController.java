@@ -14,6 +14,8 @@ import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 
 
 
@@ -53,6 +55,13 @@ public class HouseholdController {
         String userId = getUserId(authentication);
 
         return householdService.getHousehold(userId);
+    }
+
+    @PatchMapping("/{householdId}/reset-scores")
+    public ResponseEntity<Object> resetScores(@PathVariable String householdId, Authentication authentication) {
+        String userId = getUserId(authentication);
+
+        return householdService.resetScores(householdId, userId);
     }
 
     private String getUserId(Authentication authentication) {

@@ -32,6 +32,4 @@ public class AuthController {
     public ResponseEntity<Object> login(@RequestBody LoginRequest loginRequest, HttpServletResponse response) {
         return userService.login(loginRequest, response);
     }
-    
-    
 }

@@ -88,7 +88,8 @@ public class HouseholdService {
         user.setHouseholdId(household.getId());
         userRepository.save(user);
 
-        return ResponseEntity.status(HttpStatus.OK).body("Joining household with invite code " + inviteCode + " for user " + userID);
+        Household joinedHousehold = householdRepository.findById(household.getId()).orElse(null);
+        return ResponseEntity.status(HttpStatus.OK).body(joinedHousehold);
     }
 
     /* -- Lämna hushåll -- */
@@ -113,6 +114,11 @@ public class HouseholdService {
         user.setHouseholdId(null);
         userRepository.save(user);
 
+        // Ta bort hushållet om tomt
+        if (household != null && (household.getMembers() == null || household.getMembers().isEmpty())) {
+            householdRepository.deleteById(householdId);
+        }
+
         return ResponseEntity.status(HttpStatus.OK).body("User with ID " + userID + " has left household " + householdId);
     }
 
@@ -134,6 +140,33 @@ public class HouseholdService {
         }
 
         return ResponseEntity.ok(household);
+    }
+
+    /* -- Nollställ poäng för alla medlemmar i hushållet -- */
+    public ResponseEntity<Object> resetScores(String householdId, String userId) {
+        // Kolla om användaren är valid och har rätt att nollställa poäng
+        Optional<User> userOptional = userRepository.findById(userId);
+        if (userOptional.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("User with ID " + userId + " not found");
+        }
+
+        // Kolla om hushållet finns
+        Optional<Household> householdOptional = householdRepository.findById(householdId);
+        if (householdOptional.isEmpty()) {
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Household with ID " + householdId + " not found");
+        }
+
+        // Kolla om användaren är ägare av hushållet
+        Household household = householdOptional.get();
+        if (!household.getOwnerId().equals(userId)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("User with ID " + userId + " is not the owner of household " + householdId);
+        }
+
+        // Nollställ poäng för alla medlemmar
+        household.getMembers().forEach(member -> member.setScore(0));
+        householdRepository.save(household);
+
+        return ResponseEntity.ok("Scores reset for all members of household " + householdId);
     }
 
 }
