@@ -1,6 +1,7 @@
 package com.ChoreTracker.ChoreTracker.service;
 
 import com.ChoreTracker.ChoreTracker.models.User;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.cglib.core.internal.Function;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
@@ -19,7 +20,8 @@ import java.util.Date;
 @Service
 public class JWTService {
 
-    private final String secretKey = "FcNFvdjoRa7R3JQwrAuIN5S1gHJPsM9TiscVjQS2OJ4=";
+    @Value("${jwt.secret.key}")
+    private String secretKey;
 
     public String generateToken(User user) {
         Map<String, Object> claims = new HashMap<>();
