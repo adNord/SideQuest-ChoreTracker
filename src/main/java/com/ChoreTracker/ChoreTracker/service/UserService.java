@@ -82,6 +82,7 @@ public class UserService {
         user.put("id", userOptional.get().getId());
         user.put("username", userOptional.get().getUsername());
         user.put("householdId", userOptional.get().getHouseholdId());
+        user.put("isPremium", userOptional.get().isPremium());
         return ResponseEntity.ok(user);
     }
 }
