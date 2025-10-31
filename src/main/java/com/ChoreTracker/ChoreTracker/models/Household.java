@@ -3,6 +3,7 @@ package com.ChoreTracker.ChoreTracker.models;
 import java.util.List;
 
 import org.springframework.data.annotation.Id;
+import org.springframework.data.mongodb.core.mapping.DBRef;
 import org.springframework.data.mongodb.core.mapping.Document;
 
 @Document(collection = "households")
@@ -27,20 +28,21 @@ public class Household {
     public Household() {}
     
     public static class MemberScore {
-        private String memberId;
+        @DBRef
+        private User user;
         private int score;
 
-        public MemberScore(String memberId, int score) {
-            this.memberId = memberId;
+        public MemberScore(User user, int score) {
+            this.user = user;
             this.score = score;
         }
 
-        public String getMemberId() {
-            return memberId;
+        public User getUser() {
+            return user;
         }
 
-        public void setMemberId(String memberId) {
-            this.memberId = memberId;
+        public void setUser(User user) {
+            this.user = user;
         }
 
         public int getScore() {
