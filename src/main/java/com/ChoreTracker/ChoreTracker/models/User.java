@@ -10,6 +10,7 @@ public class User {
     private String householdId;
     private String username;
     private String password;
+    private boolean isPremium;
 
     public User(String username, String password) {
         this.username = username;
@@ -37,5 +38,13 @@ public class User {
     }
     public void setHouseholdId(String householdId) {
         this.householdId = householdId;
+    }
+
+    public boolean isPremium() {
+        return isPremium;
+    }
+
+    public void setPremium(boolean isPremium) {
+        this.isPremium = isPremium;
     }
 }
