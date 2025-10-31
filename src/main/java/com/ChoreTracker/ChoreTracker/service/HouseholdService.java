@@ -42,9 +42,10 @@ public class HouseholdService {
         newHousehold.setOwnerId(userID);
 
         //Lägg till skaparen som medlem med startpoäng 0
-        Household.MemberScore creator = new Household.MemberScore(userID, 0);
+        User creator = userOptional.get();
+        Household.MemberScore creatorMember = new Household.MemberScore(creator, 0);
         List<Household.MemberScore> members = new java.util.ArrayList<>();
-        members.add(creator);
+        members.add(creatorMember);
         newHousehold.setMembers(members);
 
         //Generera unik invite-kod
@@ -55,9 +56,8 @@ public class HouseholdService {
         Household saved = householdRepository.save(newHousehold);
 
         //Uppdatera användarens householdId och spara
-        User user = userOptional.get();
-        user.setHouseholdId(saved.getId());
-        userRepository.save(user);
+        creator.setHouseholdId(saved.getId());
+        userRepository.save(creator);
 
         return ResponseEntity.status(HttpStatus.CREATED).body(saved);
     }
@@ -79,12 +79,12 @@ public class HouseholdService {
         }
         Household household = householdOptional.get();
         //Lägg till användaren som medlem med startpoäng 0
+        User user = userOptional.get();
         List<Household.MemberScore> members = household.getMembers();
-        members.add(new Household.MemberScore(userID, 0));
+        members.add(new Household.MemberScore(user, 0));
         household.setMembers(members);
         householdRepository.save(household);
 
-        User user = userOptional.get();
         user.setHouseholdId(household.getId());
         userRepository.save(user);
 
@@ -105,7 +105,7 @@ public class HouseholdService {
         // Ta bort användaren från hushållet
         Household household = householdRepository.findById(householdId).orElse(null);
         if (household != null) {
-            household.getMembers().removeIf(member -> member.getMemberId().equals(userID));
+            household.getMembers().removeIf(member -> member.getUser().getId().equals(userID));
             householdRepository.save(household);
         }
 

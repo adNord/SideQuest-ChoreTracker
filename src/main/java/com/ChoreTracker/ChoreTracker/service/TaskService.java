@@ -118,8 +118,7 @@ public class TaskService {
             }
 
             for (Household.MemberScore member : household.getMembers()) {
-                String memberId = member.getMemberId();
-                if (memberId != null && memberId.equals(user.getId())) {
+                if (member.getUser() != null && member.getUser().getId().equals(user.getId())) {
                     member.incrementScore(task.getScore());
                     break;
                 }
@@ -203,17 +202,12 @@ public class TaskService {
         Household household = householdOptional.get();
         if (household.getMembers() != null) {
             for (Household.MemberScore member : household.getMembers()) {
-                String memberId = member.getMemberId();
-                // skippa null member ids och den som ska undantas
-                if (memberId == null || memberId.equals(excludingUserId))
-                continue;
-               
-                Optional<User> memberUserOptional = userRepository.findById(memberId);
-                if (memberUserOptional.isEmpty()) {
+                User memberUser = member.getUser();
+                // skippa null members och den som ska undantas
+                if (memberUser == null || memberUser.getId().equals(excludingUserId))
                     continue;
-                }
-
-                String memberUsername = memberUserOptional.get().getUsername();
+               
+                String memberUsername = memberUser.getUsername();
                 System.out.println("Notifying member : " + memberUsername);
                 messagingTemplate.convertAndSendToUser(memberUsername, "queue/household/" + householdId + "/tasks", content);
             }
