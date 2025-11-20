@@ -197,4 +197,4 @@ Returnerar:
 - **Realtidsuppdateringar**: WebSocket-stöd för live-uppdateringar (kommer snart)
 
 ## Frontend
-[ChoreTracker Frontend](https://github.com/adNord/ChoreTracker-frontend)
+[ChoreTracker Frontend](https://github.com/adNord/SideQuest-ChoreTracker-frontend)
